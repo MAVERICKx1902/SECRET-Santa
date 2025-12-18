@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Santa</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #c41e3a 0%, #e74c3c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .section h2 {
+            color: #c41e3a;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        input[type="text"], input[type="password"] {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #c41e3a;
+        }
+        
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #c41e3a 0%, #e74c3c 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(196, 30, 58, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #f1c40f 100%);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.3);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 8px 15px;
+            font-size: 0.9em;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+        
+        .participants-list {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .participant-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #c41e3a;
+        }
+        
+        .participant-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .participant-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .participant-count {
+            background: #c41e3a;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        
+        .draw-section {
+            text-align: center;
+            padding: 30px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+        
+        .draw-section button {
+            font-size: 1.2em;
+            padding: 15px 40px;
+            margin: 10px;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            border-radius: 5px;
+            color: #1565c0;
+        }
+        
+        .status.completed {
+            background: #c8e6c9;
+            border-left-color: #4caf50;
+            color: #2e7d32;
+        }
+        
+        .reveal-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .reveal-button {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            padding: 15px;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: block;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .reveal-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 40px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            animation: slideIn 0.3s;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal-header {
+            font-size: 1.5em;
+            color: #c41e3a;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .modal-greeting {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .modal-greeting strong {
+            color: #c41e3a;
+            font-size: 1.4em;
+        }
+        
+        .assignment-box {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border: 3px solid #4caf50;
+            border-radius: 15px;
+            padding: 40px;
+            margin: 30px 0;
+        }
+        
+        .label {
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+        
+        .target-name {
+            font-size: 2.5em;
+            color: #2e7d32;
+            font-weight: bold;
+            margin: 20px 0;
+            word-wrap: break-word;
+        }
+        
+        .modal-buttons {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .modal-buttons button {
+            flex: 1;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .close:hover {
+            color: #c41e3a;
+        }
+        
+        .admin-badge {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .admin-badge strong {
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎄 Secret Santa 🎄</h1>
+            <p>Spread Christmas Joy Anonymously</p>
+        </header>
+        
+        <div class="content">
+            <div id="message" class="message"></div>
+            
+            <!-- Login Section -->
+            <div id="loginSection" class="section">
+                <h2>Enter Your Name</h2>
+                <p style="color: #666; margin-bottom: 20px;">
+                    Enter your name to reveal your Secret Santa assignment.
+                </p>
+                <div class="input-group">
+                    <input type="text" id="loginNameInput" placeholder="Your name" autocomplete="off">
+                    <button class="btn-primary" onclick="loginAsParticipant()">Reveal</button>
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <button class="btn-warning" onclick="toggleAdminLogin()" style="padding: 8px 20px; font-size: 0.9em;">
+                        Organizer Login
+                    </button>
+                </div>
+                <div id="adminLoginSection" style="display: none; margin-top: 20px; padding: 20px; background: #f0f0f0; border-radius: 5px;">
+                    <p style="margin-bottom: 15px; color: #666;">Enter organizer password:</p>
+                    <div class="input-group">
+                        <input type="password" id="adminPassword" placeholder="Organizer password" autocomplete="off">
+                        <button class="btn-primary" onclick="loginAsAdmin()">Login</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin Section -->
+            <div id="adminSection" style="display: none;">
+                <div class="admin-badge">
+                    <strong style="color: #155724;">✓ Organizer Mode</strong>
+                    <button class="btn-danger" onclick="logout()" style="padding: 8px 15px; font-size: 0.9em;">Logout</button>
+                </div>
+                
+                <div class="section">
+                    <h2>Add Participants</h2>
+                    <div class="input-group">
+                        <input type="text" id="nameInput" placeholder="Enter participant name" autocomplete="off">
+                        <button class="btn-primary" onclick="addParticipant()">Add</button>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>Participants List</h2>
+                    <div class="participants-list">
+                        <div id="participantsList">
+                            <div class="empty-state">
+                                <p>No participants yet. Add someone to get started!</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="participant-count" style="display: inline-block; margin-top: 10px;">
+                        Total: <span id="count">0</span> participants
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <div class="draw-section">
+                        <h2>Ready to Draw?</h2>
+                        <p style="margin-bottom: 20px; color: #666;">
+                            Make sure all participants are added before drawing names!
+                        </p>
+                        <div id="drawStatus" class="status">
+                            Names haven't been drawn yet. Click the button below to start!
+                        </div>
+                        <div id="drawButtons">
+                            <button class="btn-success" onclick="drawNames()">Draw Secret Santa Names</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Participant Reveal Section -->
+            <div id="participantSection" style="display: none;">
+                <div style="background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="color: #155724;">✓ Names have been drawn!</strong>
+                    <button class="btn-danger" onclick="logout()" style="padding: 8px 15px; font-size: 0.9em;">Logout</button>
+                </div>
+                
+                <div class="section">
+                    <h2>🎁 Your Assignment</h2>
+                    <p style="color: #666; margin-bottom: 20px;">
+                        Click the button below to reveal who you're shopping for. Keep it secret!
+                    </p>
+                    <div class="reveal-links" id="revealLinks">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reveal Modal -->
+    <div id="revealModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div class="modal-header">🎁 Your Secret Santa Assignment 🎁</div>
+            <div class="modal-greeting">
+                Hi <strong id="modalPerson"></strong>!
+            </div>
+            <div class="assignment-box">
+                <div class="label">You are Secret Santa for:</div>
+                <div class="target-name" id="modalTarget"></div>
+            </div>
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 5px; color: #856404; margin-bottom: 20px;">
+                <strong>🤫 Keep it Secret!</strong>
+                <p style="margin-top: 10px;">Don't tell anyone! Part of the fun is the mystery.</p>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-primary" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ORGANIZER_PASSWORD = 'santa123'; // Change this to your password!
+        
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', loadData);
+        
+        // Allow Enter key
+        document.getElementById('nameInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') addParticipant();
+        });
+        
+        document.getElementById('loginNameInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') loginAsParticipant();
+        });
+        
+        document.getElementById('adminPassword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') loginAsAdmin();
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('revealModal');
+            if (e.target === modal) closeModal();
+        });
+        
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = 'message ' + type;
+            setTimeout(() => {
+                messageDiv.className = 'message';
+            }, 4000);
+        }
+        
+        function getData() {
+            const data = localStorage.getItem('secretSantaData');
+            return data ? JSON.parse(data) : {
+                participants: [],
+                assignments: {},
+                drawn: false
+            };
+        }
+        
+        function saveData(data) {
+            localStorage.setItem('secretSantaData', JSON.stringify(data));
+        }
+        
+        function getSessionData() {
+            const session = localStorage.getItem('secretSantaSession');
+            return session ? JSON.parse(session) : { isAdmin: false, userName: null };
+        }
+        
+        function saveSessionData(session) {
+            localStorage.setItem('secretSantaSession', JSON.stringify(session));
+        }
+        
+        function loadData() {
+            const session = getSessionData();
+            const data = getData();
+            
+            if (session.isAdmin) {
+                showAdminView(data);
+            } else if (session.userName) {
+                showParticipantView(data, session.userName);
+            } else {
+                showLoginView(data);
+            }
+        }
+        
+        function showLoginView(data) {
+            document.getElementById('adminSection').style.display = 'none';
+            document.getElementById('participantSection').style.display = 'none';
+            document.getElementById('loginSection').style.display = 'block';
+        }
+        
+        function showAdminView(data) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('participantSection').style.display = 'none';
+            document.getElementById('adminSection').style.display = 'block';
+            
+            updateParticipantsList(data.participants);
+            updateDrawStatus(data.drawn, data.assignments);
+        }
+        
+        function showParticipantView(data, userName) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('adminSection').style.display = 'none';
+            document.getElementById('participantSection').style.display = 'block';
+            
+            showMessage('Welcome, ' + userName + '!', 'success');
+            
+            const revealLinks = document.getElementById('revealLinks');
+            revealLinks.innerHTML = `
+                <button class="reveal-button" onclick="revealAssignment('${userName}')">
+                    ${escapeHtml(userName)}
+                </button>
+            `;
+        }
+        
+        function toggleAdminLogin() {
+            const section = document.getElementById('adminLoginSection');
+            section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function loginAsAdmin() {
+            const password = document.getElementById('adminPassword').value.trim();
+            
+            if (!password) {
+                showMessage('Please enter the password', 'error');
+                return;
+            }
+            
+            if (password !== ORGANIZER_PASSWORD) {
+                showMessage('Incorrect password', 'error');
+                document.getElementById('adminPassword').value = '';
+                return;
+            }
+            
+            const session = { isAdmin: true, userName: null };
+            saveSessionData(session);
+            
+            showMessage('Welcome, Organizer!', 'success');
+            const data = getData();
+            showAdminView(data);
+        }
+        
+        function loginAsParticipant() {
+            const name = document.getElementById('loginNameInput').value.trim();
+            
+            if (!name) {
+                showMessage('Please enter your name', 'error');
+                return;
+            }
+            
+            const data = getData();
+            const nameLower = name.toLowerCase();
+            const foundName = data.participants.find(p => p.toLowerCase() === nameLower);
+            
+            if (!foundName) {
+                showMessage('Name not found in participants list', 'error');
+                return;
+            }
+            
+            if (!data.drawn) {
+                showMessage('Names haven\'t been drawn yet. Please wait for the organizer.', 'error');
+                return;
+            }
+            
+            const session = { isAdmin: false, userName: foundName };
+            saveSessionData(session);
+            
+            showParticipantView(data, foundName);
+        }
+        
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('secretSantaSession');
+                showMessage('Logged out', 'success');
+                const data = getData();
+                showLoginView(data);
+                document.getElementById('loginNameInput').value = '';
+                document.getElementById('adminPassword').value = '';
+            }
+        }
+        
+        function updateParticipantsList(participants) {
+            const list = document.getElementById('participantsList');
+            document.getElementById('count').textContent = participants.length;
+            
+            if (participants.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p>No participants yet. Add someone to get started!</p></div>';
+                return;
+            }
+            
+            list.innerHTML = participants.map(name => `
+                <div class="participant-item">
+                    <span class="participant-name">${escapeHtml(name)}</span>
+                    <button class="btn-danger" onclick="removeParticipant('${name}')">Remove</button>
+                </div>
+            `).join('');
+        }
+        
+        function updateDrawStatus(drawn, assignments) {
+            const drawStatus = document.getElementById('drawStatus');
+            const drawButtons = document.getElementById('drawButtons');
+            
+            if (drawn) {
+                drawStatus.innerHTML = '✓ Names have been drawn! Participants can now reveal their assignments.';
+                drawStatus.classList.add('completed');
+                drawButtons.innerHTML = `
+                    <button class="btn-warning" onclick="resetDraw()">Draw Again</button>
+                    <button class="btn-primary" onclick="viewAllAssignments()" style="margin-left: 10px;">View All</button>
+                `;
+            } else {
+                drawStatus.innerHTML = 'Names haven\'t been drawn yet. Click the button below to start!';
+                drawStatus.classList.remove('completed');
+                drawButtons.innerHTML = '<button class="btn-success" onclick="drawNames()">Draw Secret Santa Names</button>';
+            }
+        }
+        
+        function addParticipant() {
+            const input = document.getElementById('nameInput');
+            const name = input.value.trim();
+            
+            if (!name) {
+                showMessage('Please enter a name', 'error');
+                return;
+            }
+            
+            const data = getData();
+            const nameLower = name.toLowerCase();
+            const nameExists = data.participants.some(p => p.toLowerCase() === nameLower);
+            
+            if (nameExists) {
+                showMessage('This participant already exists', 'error');
+                return;
+            }
+            
+            if (data.drawn) {
+                data.drawn = false;
+                data.assignments = {};
+            }
+            
+            data.participants.push(name);
+            saveData(data);
+            
+            showMessage(name + ' added successfully!', 'success');
+            input.value = '';
+            updateParticipantsList(data.participants);
+            input.focus();
+        }
+        
+        function removeParticipant(name) {
+            if (confirm('Remove ' + name + ' from the list?')) {
+                const data = getData();
+                data.participants = data.participants.filter(p => p !== name);
+                
+                if (data.drawn) {
+                    data.drawn = false;
+                    data.assignments = {};
+                }
+                
+                saveData(data);
+                showMessage(name + ' removed', 'success');
+                updateParticipantsList(data.participants);
+                updateDrawStatus(false, {});
+            }
+        }
+        
+        function drawNames() {
+            const data = getData();
+            
+            if (data.participants.length < 2) {
+                showMessage('Need at least 2 participants to draw names', 'error');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to draw names? This will randomly assign Secret Santas.')) {
+                return;
+            }
+            
+            const assignments = {};
+            let receivers = data.participants.slice();
+            
+            let valid = false;
+            while (!valid) {
+                receivers = shuffleArray(receivers);
+                valid = true;
+                for (let i = 0; i < data.participants.length; i++) {
+                    if (data.participants[i] === receivers[i]) {
+                        valid = false;
+                        break;
+                    }
+                }
+            }
+            
+            for (let i = 0; i < data.participants.length; i++) {
+                assignments[data.participants[i]] = receivers[i];
+            }
+            
+            data.assignments = assignments;
+            data.drawn = true;
+            saveData(data);
+            
+            showMessage('Names drawn successfully!', 'success');
+            updateDrawStatus(true, assignments);
+        }
+        
+        function shuffleArray(array) {
+            const arr = array.slice();
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+        
+        function resetDraw() {
+            if (!confirm('Reset the drawing? This will clear all assignments.')) {
+                return;
+            }
+            
+            const data = getData();
+            data.drawn = false;
+            data.assignments = {};
+            saveData(data);
+            
+            showMessage('Drawing reset!', 'success');
+            updateDrawStatus(false, {});
+        }
+        
+        function revealAssignment(person) {
+            const data = getData();
+            const target = data.assignments[person];
+            
+            if (!target) {
+                showMessage('Assignment not found', 'error');
+                return;
+            }
+            
+            document.getElementById('modalPerson').textContent = person;
+            document.getElementById('modalTarget').textContent = target;
+            document.getElementById('revealModal').style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('revealModal').style.display = 'none';
+        }
+        
+        function viewAllAssignments() {
+            const data = getData();
+            
+            if (!data.drawn) {
+                showMessage('Names haven\'t been drawn yet', 'error');
+                return;
+            }
+            
+            let allAssignments = 'SECRET SANTA ASSIGNMENTS (Organizer Only - Keep Private!)\n\n';
+            for (const [giver, receiver] of Object.entries(data.assignments)) {
+                allAssignments += giver + ' → ' + receiver + '\n';
+            }
+            
+            alert(allAssignments);
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
