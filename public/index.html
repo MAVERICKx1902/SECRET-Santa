@@ -11,6 +11,7 @@
 <body>
 <div id="app">
   <div id="stage">
+    <div id="ambient"><div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div></div>
     <div id="yt-host"><div id="yt-player"></div></div>
     <div id="local-host"><video id="local-video" playsinline></video></div>
 
@@ -22,7 +23,7 @@
     <div id="idle">
       <div class="logo">mpv-web</div>
       <div>no file &mdash; nothing to play</div>
-      <div style="margin-top:18px">
+      <div class="idle-keys">
         press <kbd>?</kbd> for keys &middot; <kbd>/</kbd> to search &middot; <kbd>:</kbd> for console
       </div>
       <div>press <kbd>Tab</kbd> for the playlist &amp; sign-in panel</div>
@@ -144,25 +145,25 @@
       <div id="log"></div>
       <span>:</span><input id="console-input" type="text" spellcheck="false" autocomplete="off" />
     </div>
-  </div>
 
-  <div id="osc">
-    <div id="seek">
-      <div class="track"></div><div class="buf"></div><div class="fill"></div><div class="knob"></div>
-    </div>
-    <div id="controls">
-      <button class="btn" id="b-prev" title="previous (&lt;)">|&lt;</button>
-      <button class="btn" id="b-play" title="play/pause (space)">&#9654;</button>
-      <button class="btn" id="b-next" title="next (&gt;)">&gt;|</button>
-      <button class="btn" id="b-mute" title="mute (m)">vol</button>
-      <span class="time"><b id="t-pos">00:00</b> / <span id="t-dur">00:00</span></span>
-      <span id="now"><b>no file</b></span>
-      <span class="spacer"></span>
-      <span class="badge sp" id="badge-sp">spotify</span>
-      <span class="badge yt" id="badge-yt">youtube</span>
-      <button class="btn" id="b-loop" title="loop (L)">loop</button>
-      <button class="btn" id="b-panel" title="playlist (Tab)">list</button>
-      <button class="btn" id="b-full" title="fullscreen (f)">[ ]</button>
+    <div id="osc">
+      <div id="seek">
+        <div class="track"></div><div class="buf"></div><div class="fill"></div><div class="knob"></div>
+      </div>
+      <div id="controls">
+        <button class="btn" id="b-prev" title="previous (&lt;)">|&lt;</button>
+        <button class="btn" id="b-play" title="play/pause (space)">&#9654;</button>
+        <button class="btn" id="b-next" title="next (&gt;)">&gt;|</button>
+        <button class="btn" id="b-mute" title="mute (m)">vol</button>
+        <span class="time"><b id="t-pos">00:00</b> / <span id="t-dur">00:00</span></span>
+        <span id="now"><b>no file</b></span>
+        <span class="spacer"></span>
+        <span class="badge sp" id="badge-sp">spotify</span>
+        <span class="badge yt" id="badge-yt">youtube</span>
+        <button class="btn" id="b-loop" title="loop (L)">loop</button>
+        <button class="btn" id="b-panel" title="playlist (Tab)">list</button>
+        <button class="btn" id="b-full" title="fullscreen (f)">[ ]</button>
+      </div>
     </div>
   </div>
 </div>

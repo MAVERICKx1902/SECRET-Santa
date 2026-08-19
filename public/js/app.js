@@ -77,6 +77,59 @@ function showHost(kind) {
   el.local.classList.toggle('on', kind === 'local');
   el.art.classList.toggle('on', kind === 'spotify');
   el.idle.classList.toggle('off', Boolean(kind));
+  // Dim the ambient wash behind video so it doesn't wash out the picture.
+  el.stage.classList.toggle('has-video', kind === 'youtube' || kind === 'local');
+}
+
+/**
+ * Pull three dominant colours out of the artwork and feed them to the
+ * ambient layer, so the frosted panels refract the current track's palette.
+ */
+const paletteCache = new Map();
+function tintFromArt(src) {
+  if (!src) return;
+  if (paletteCache.has(src)) return applyTint(paletteCache.get(src));
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    try {
+      const n = 24;
+      const c = document.createElement('canvas');
+      c.width = c.height = n;
+      const ctx = c.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0, n, n);
+      const { data } = ctx.getImageData(0, 0, n, n);
+
+      // Bucket by hue, keep reasonably saturated/bright pixels.
+      const buckets = new Map();
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+        if (mx < 40 || mx - mn < 24) continue;
+        const key = `${Math.round(r / 48)},${Math.round(g / 48)},${Math.round(b / 48)}`;
+        const e = buckets.get(key) || { r: 0, g: 0, b: 0, n: 0 };
+        e.r += r; e.g += g; e.b += b; e.n++;
+        buckets.set(key, e);
+      }
+      const top = [...buckets.values()].sort((a, b) => b.n - a.n).slice(0, 3)
+        .map((e) => `rgb(${Math.round(e.r / e.n)},${Math.round(e.g / e.n)},${Math.round(e.b / e.n)})`);
+      if (!top.length) return;
+      while (top.length < 3) top.push(top[top.length - 1]);
+      paletteCache.set(src, top);
+      applyTint(top);
+    } catch {
+      /* tainted canvas (no CORS header) — keep the default palette */
+    }
+  };
+  img.src = src;
+}
+
+function applyTint([a, b, c]) {
+  const s = document.documentElement.style;
+  s.setProperty('--amb1', a);
+  s.setProperty('--amb2', b);
+  s.setProperty('--amb3', c);
 }
 
 function onTrackEnd() {
@@ -113,6 +166,7 @@ async function playIndex(i) {
       el.artT.textContent = item.title;
       el.artA.textContent = item.subtitle || '';
     }
+    tintFromArt(item.art);
 
     await b.load(item);
     b.setVolume(state.muted ? 0 : state.volume);
@@ -365,7 +419,9 @@ function tick() {
     if (state.backend.name === 'spotify' && st.track) {
       const cur = state.playlist[state.index];
       if (!cur || cur.uri !== st.track.uri) {
-        el.artImg.src = st.track.album?.images?.[0]?.url || '';
+        const cover = st.track.album?.images?.[0]?.url || '';
+        el.artImg.src = cover;
+        tintFromArt(cover);
         el.artT.textContent = st.track.name;
         el.artA.textContent = st.track.artists.map((a) => a.name).join(', ');
         el.now.innerHTML = `<b>${escapeHTML(st.track.name)}</b> — ${escapeHTML(st.track.artists.map((a) => a.name).join(', '))}`;
