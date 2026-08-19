@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>mpv-web</title>
+<meta name="description" content="An mpv-style keyboard-driven player for Spotify and YouTube." />
+<link rel="stylesheet" href="/css/mpv.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000'/%3E%3Cpolygon points='12,9 24,16 12,23' fill='%237aa2f7'/%3E%3C/svg%3E" />
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <div id="ambient"><div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div></div>
+    <div id="yt-host"><div id="yt-player"></div></div>
+    <div id="local-host"><video id="local-video" playsinline></video></div>
+
+    <div id="art-host">
+      <img id="art-img" alt="" />
+      <div id="art-meta"><div class="t"></div><div class="a"></div></div>
+    </div>
+
+    <div id="idle">
+      <div class="logo">mpv-web</div>
+      <div>no file &mdash; nothing to play</div>
+      <div class="idle-keys">
+        press <kbd>?</kbd> for keys &middot; <kbd>/</kbd> to search &middot; <kbd>:</kbd> for console
+      </div>
+      <div>press <kbd>Tab</kbd> for the playlist &amp; sign-in panel</div>
+    </div>
+
+    <div id="osd"></div>
+
+    <div id="stats">
+      <div><b>Backend</b><span id="st-backend">idle</span></div>
+      <div><b>Account</b><span id="st-acct">&mdash;</span></div>
+      <div><b>Title</b><span id="st-title">&mdash;</span></div>
+      <div><b>Position</b><span id="st-pos">00:00:00 / 00:00:00</span></div>
+      <div><b>Speed</b><span id="st-speed">1.00x</span></div>
+      <div><b>Volume</b><span id="st-vol">100</span></div>
+      <div><b>Playlist</b><span id="st-pl">0 / 0</span></div>
+      <div><b>Loop</b><span id="st-loop">no</span></div>
+      <div><b>Video</b><span id="st-video">&mdash;</span></div>
+      <div><b>Latency</b><span id="st-lat">&mdash;</span></div>
+    </div>
+
+    <div id="panel">
+      <header>
+        <button class="tab on" data-pane="playlist">playlist</button>
+        <button class="tab" data-pane="search">search</button>
+        <button class="tab" data-pane="settings">accounts</button>
+        <span class="spacer"></span>
+        <button class="tab" id="panel-close" title="close (Tab)">&times;</button>
+      </header>
+
+      <section class="pane on" id="pane-playlist">
+        <div class="searchbar">
+          <input id="url-input" type="text" placeholder="paste a YouTube / Spotify URL, then Enter" />
+          <button class="tab" id="url-add">add</button>
+        </div>
+        <div class="list" id="playlist"></div>
+        <div class="foot">
+          <span id="pl-count">0 items</span> &middot; Enter play &middot; x remove &middot; Shift+C clear
+        </div>
+      </section>
+
+      <section class="pane" id="pane-search">
+        <div class="searchbar">
+          <select id="search-src">
+            <option value="auto">auto</option>
+            <option value="spotify">spotify</option>
+            <option value="youtube">youtube</option>
+          </select>
+          <input id="search-input" type="text" placeholder="search tracks & videos…" />
+        </div>
+        <div class="list" id="results"><div class="empty">Sign in on the <b>accounts</b> tab, then search.</div></div>
+        <div class="foot">Enter play now &middot; Shift+Enter queue</div>
+      </section>
+
+      <section class="pane" id="pane-settings">
+        <div class="settings">
+          <h3>Spotify</h3>
+          <p>Status: <span id="sp-status" class="bad">signed out</span></p>
+          <p>Playback needs a <b>Spotify Premium</b> account (Web Playback SDK limitation).</p>
+          <input type="text" id="sp-client" placeholder="Spotify Client ID" spellcheck="false" />
+          <button class="authbtn sp" id="sp-login">sign in with spotify</button>
+          <button class="authbtn" id="sp-logout">sign out</button>
+
+          <h3>YouTube</h3>
+          <p>Status: <span id="yt-status" class="bad">signed out</span></p>
+          <p>Playback works signed-out. Sign in to search and load <b>your</b> playlists &amp; likes.</p>
+          <input type="text" id="yt-client" placeholder="Google OAuth Client ID" spellcheck="false" />
+          <input type="text" id="yt-key" placeholder="YouTube Data API key (optional, for search)" spellcheck="false" />
+          <button class="authbtn yt" id="yt-login">sign in with google</button>
+          <button class="authbtn" id="yt-logout">sign out</button>
+          <button class="authbtn" id="yt-mine">load my playlists</button>
+
+          <h3>Redirect URI</h3>
+          <p>Register this exact URI in both consoles:</p>
+          <p><code id="redirect-uri"></code> <button class="btn" id="copy-uri">copy</button></p>
+
+          <h3>Setup</h3>
+          <ol>
+            <li>Spotify: <b>developer.spotify.com/dashboard</b> → Create app → add the redirect URI → copy the Client ID (no secret needed, this uses PKCE).</li>
+            <li>Google: <b>console.cloud.google.com</b> → enable <b>YouTube Data API v3</b> → OAuth client (Web) → add the redirect URI → copy the Client ID.</li>
+            <li>Paste the IDs above. They are stored only in this browser's localStorage.</li>
+          </ol>
+
+          <h3>Local files</h3>
+          <p>No account needed — open any local video/audio file.</p>
+          <button class="btn" id="open-local">open file…</button>
+          <input type="file" id="file-input" accept="video/*,audio/*" multiple hidden />
+        </div>
+      </section>
+    </div>
+
+    <div id="help">
+      <h2>KEY BINDINGS</h2>
+      <div class="cols">
+        <div class="k"><b>space / k</b><span>pause / play</span></div>
+        <div class="k"><b>&larr; &rarr;</b><span>seek &plusmn;5s</span></div>
+        <div class="k"><b>&uarr; &darr;</b><span>volume &plusmn;5</span></div>
+        <div class="k"><b>Shift+&larr;/&rarr;</b><span>seek &plusmn;1s (frame-ish)</span></div>
+        <div class="k"><b>PgUp / PgDn</b><span>seek &plusmn;60s</span></div>
+        <div class="k"><b>j / l</b><span>seek &plusmn;10s</span></div>
+        <div class="k"><b>&lt; / &gt;</b><span>previous / next in playlist</span></div>
+        <div class="k"><b>0&ndash;9</b><span>jump to 0%&ndash;90%</span></div>
+        <div class="k"><b>m</b><span>mute</span></div>
+        <div class="k"><b>[ / ]</b><span>speed down / up (YouTube &amp; local)</span></div>
+        <div class="k"><b>Backspace</b><span>reset speed</span></div>
+        <div class="k"><b>f</b><span>fullscreen</span></div>
+        <div class="k"><b>Tab</b><span>toggle side panel</span></div>
+        <div class="k"><b>/</b><span>focus search</span></div>
+        <div class="k"><b>:</b><span>command console</span></div>
+        <div class="k"><b>Shift+I</b><span>stats overlay</span></div>
+        <div class="k"><b>L</b><span>loop current</span></div>
+        <div class="k"><b>s</b><span>shuffle playlist</span></div>
+        <div class="k"><b>?</b><span>this help</span></div>
+        <div class="k"><b>q / Esc</b><span>stop / close overlay</span></div>
+      </div>
+      <div class="hint">Console commands: <b>loadfile &lt;url&gt;</b>, <b>seek &lt;n&gt;</b>, <b>set volume &lt;0-100&gt;</b>, <b>set speed &lt;n&gt;</b>, <b>playlist-next</b>, <b>playlist-prev</b>, <b>playlist-clear</b>, <b>shuffle</b>, <b>login spotify|youtube</b>, <b>logout</b>, <b>quit</b></div>
+    </div>
+
+    <div id="console">
+      <div id="log"></div>
+      <span>:</span><input id="console-input" type="text" spellcheck="false" autocomplete="off" />
+    </div>
+
+    <div id="osc">
+      <div id="seek">
+        <div class="track"></div><div class="buf"></div><div class="fill"></div><div class="knob"></div>
+      </div>
+      <div id="controls">
+        <button class="btn" id="b-prev" title="previous (&lt;)">|&lt;</button>
+        <button class="btn" id="b-play" title="play/pause (space)">&#9654;</button>
+        <button class="btn" id="b-next" title="next (&gt;)">&gt;|</button>
+        <button class="btn" id="b-mute" title="mute (m)">vol</button>
+        <span class="time"><b id="t-pos">00:00</b> / <span id="t-dur">00:00</span></span>
+        <span id="now"><b>no file</b></span>
+        <span class="spacer"></span>
+        <span class="badge sp" id="badge-sp">spotify</span>
+        <span class="badge yt" id="badge-yt">youtube</span>
+        <button class="btn" id="b-loop" title="loop (L)">loop</button>
+        <button class="btn" id="b-panel" title="playlist (Tab)">list</button>
+        <button class="btn" id="b-full" title="fullscreen (f)">[ ]</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>mpv-web · auth</title>
+<style>
+  html, body { background:#000; color:#ccc; font:13px/1.5 ui-monospace, Menlo, Consolas, monospace; height:100%; margin:0; }
+  main { display:grid; place-content:center; height:100%; text-align:center; padding:2rem; }
+  b { color:#8ab4f8; }
+</style>
+</head>
+<body>
+<main>
+  <div id="msg">Completing sign-in&hellip;</div>
+</main>
+<script>
+  (function () {
+    var params = new URLSearchParams(location.search);
+    var hash = new URLSearchParams(location.hash.replace(/^#/, ''));
+    // Google's implicit flow returns state/token in the fragment; Spotify's
+    // code flow returns state/code in the query. Accept either.
+    var state = params.get('state') || hash.get('state') || '';
+    var token = hash.get('access_token');
+    var payload = {
+      type: 'mpv-web-auth',
+      provider: state.indexOf('yt:') === 0 || token ? 'youtube' : 'spotify',
+      code: params.get('code'),
+      state: state,
+      error: params.get('error') || hash.get('error'),
+      accessToken: token,
+      expiresIn: hash.get('expires_in')
+    };
+    try {
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage(payload, location.origin);
+        document.getElementById('msg').innerHTML = 'Signed in. <b>You can close this window.</b>';
+        setTimeout(function () { window.close(); }, 400);
+        return;
+      }
+    } catch (e) {}
+    // No opener (popup blocked → full redirect). Stash and bounce home.
+    try { sessionStorage.setItem('mpvweb.pendingAuth', JSON.stringify(payload)); } catch (e) {}
+    location.replace('/');
+  })();
+</script>
+</body>
+</html>
