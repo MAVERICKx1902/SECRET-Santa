@@ -71,7 +71,7 @@
 
     try {
       if (window.opener && !window.opener.closed) {
-        window.opener.postMessage(payload, location.origin);
+        window.opener.postMessage(payload, '*');
         if (error) {
           showMessage('Sign-in failed.', error);
         } else {

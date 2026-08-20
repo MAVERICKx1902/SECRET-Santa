@@ -6,7 +6,10 @@ const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   process.env.PORT = String(PORT);
-  const serverFile = path.join(__dirname, '..', 'server.js');
+  let serverFile = path.join(__dirname, '..', 'server.js');
+  if (app.isPackaged && serverFile.includes('app.asar')) {
+    serverFile = serverFile.replace('app.asar', 'app.asar.unpacked');
+  }
   await import(pathToFileURL(serverFile).href);
 }
 
@@ -26,14 +29,34 @@ function createWindow() {
   });
 
   win.loadURL(`http://127.0.0.1:${PORT}/`);
+
   win.webContents.setWindowOpenHandler(({ url }) => {
+    // Allow OAuth popups (Spotify / Google) to open inside a child window so window.opener postMessage works
+    if (url.includes('spotify.com') || url.includes('google.com') || url.includes('callback.html')) {
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          width: 520,
+          height: 700,
+          autoHideMenuBar: true,
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+          },
+        },
+      };
+    }
     shell.openExternal(url);
     return { action: 'deny' };
   });
 }
 
 app.whenReady().then(async () => {
-  await startServer();
+  try {
+    await startServer();
+  } catch (err) {
+    console.log('Server initialization message:', err.message);
+  }
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

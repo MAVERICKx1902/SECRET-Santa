@@ -12,10 +12,12 @@ const LS = {
   ytClient: 'mpvweb.youtube.clientId',
   ytKey: 'mpvweb.youtube.apiKey',
   ytTok: 'mpvweb.youtube.token',
+  ytVer: 'mpvweb.youtube.verifier',
   email: 'mpvweb.account.email',
 };
 
 export const REDIRECT_URI = `${location.origin}/callback.html`;
+
 
 const SPOTIFY_SCOPES = [
   'streaming',
@@ -81,9 +83,19 @@ function popupAuth(url, name) {
       return;
     }
 
+    const isAllowedOrigin = (origin) => {
+      if (origin === location.origin) return true;
+      try {
+        const u1 = new URL(origin);
+        const u2 = new URL(location.origin);
+        const localHosts = ['localhost', '127.0.0.1', '0.0.0.0'];
+        return u1.port === u2.port && localHosts.includes(u1.hostname) && localHosts.includes(u2.hostname);
+      } catch { return false; }
+    };
+
     let receivedMessage = false;
     const onMsg = (ev) => {
-      if (ev.origin !== location.origin) return;
+      if (!isAllowedOrigin(ev.origin)) return;
       const d = ev.data;
       if (!d || d.type !== 'mpv-web-auth') return;
       receivedMessage = true;
@@ -106,16 +118,17 @@ function popupAuth(url, name) {
 /* =================== SPOTIFY =================== */
 export const spotify = {
   clientId: () => read(LS.spClient, ''),
-  setClientId: (id) => write(LS.spClient, id.trim() || null),
+  setClientId: (id) => write(LS.spClient, String(id || '').trim().replace(/^["']|["']$/g, '') || null),
   session: () => readJSON(LS.spTok),
 
   isAuthed() {
-    const s = this.session ? this.session() : readJSON(LS.spTok);
-    return Boolean(s && s.refresh_token);
+    const s = readJSON(LS.spTok);
+    return Boolean(s && (s.refresh_token || (s.access_token && Date.now() < (s.expires_at || Infinity))));
   },
 
   async login() {
-    const clientId = read(LS.spClient, '');
+    let clientId = read(LS.spClient, '');
+    clientId = clientId.trim().replace(/^["']|["']$/g, '');
     if (!clientId) throw new Error('Set a Spotify Client ID first (accounts tab).');
     const verifier = randomString();
     write(LS.spVer, verifier);
@@ -178,10 +191,30 @@ export const spotify = {
     return j.access_token;
   },
 
+  async refreshToken() {
+    let s = readJSON(LS.spTok);
+    if (!s || !s.refresh_token) return null;
+    const r = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: read(LS.spClient, ''),
+        grant_type: 'refresh_token',
+        refresh_token: s.refresh_token,
+      }),
+    });
+    const j = await r.json();
+    if (!r.ok) { write(LS.spTok, null); return null; }
+    j.refresh_token = j.refresh_token || s.refresh_token;
+    j.expires_at = Date.now() + (j.expires_in - 60) * 1000;
+    write(LS.spTok, j);
+    return j.access_token;
+  },
+
   logout() { write(LS.spTok, null); },
 
   /** Thin Web API wrapper that always attaches a fresh token. */
-  async api(path, opts = {}) {
+  async api(path, opts = {}, retry = true) {
     const tok = await this.token();
     if (!tok) throw new Error('spotify_not_authed');
     const url = path.startsWith('http') ? path : `https://api.spotify.com/v1${path}`;
@@ -190,6 +223,12 @@ export const spotify = {
       headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json', ...(opts.headers || {}) },
     });
     if (r.status === 204) return null;
+    if (r.status === 401 && retry) {
+      const fresh = await this.refreshToken();
+      if (fresh) return this.api(path, opts, false);
+      write(LS.spTok, null);
+      throw new Error('Spotify session expired. Please sign in again (accounts tab).');
+    }
     const text = await r.text();
     const data = text ? JSON.parse(text) : null;
     if (!r.ok) throw new Error(data?.error?.message || `spotify_http_${r.status}`);
@@ -207,36 +246,89 @@ export const youtube = {
   session: () => readJSON(LS.ytTok),
   isAuthed() {
     const s = readJSON(LS.ytTok);
-    return Boolean(s && s.access_token && Date.now() < s.expires_at);
+    return Boolean(s && (s.refresh_token || (s.access_token && Date.now() < (s.expires_at || Infinity))));
   },
 
   async login() {
     const clientId = read(LS.ytClient, '');
     if (!clientId) throw new Error('Set a Google OAuth Client ID first (accounts tab).');
+    const verifier = randomString();
+    write(LS.ytVer, verifier);
     const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     url.search = new URLSearchParams({
       client_id: clientId,
       redirect_uri: REDIRECT_URI,
-      response_type: 'token',
+      response_type: 'code',
       scope: GOOGLE_SCOPES,
+      code_challenge_method: 'S256',
+      code_challenge: await s256(verifier),
       include_granted_scopes: 'true',
+      access_type: 'offline',
       state: 'yt:' + randomString(8),
       prompt: 'consent',
     }).toString();
 
     const res = await popupAuth(url.toString(), 'google-auth');
-    if (!res.accessToken) throw new Error('no_token_returned');
-    const sess = {
-      access_token: res.accessToken,
-      expires_at: Date.now() + (Number(res.expiresIn || 3600) - 60) * 1000,
-    };
-    write(LS.ytTok, sess);
-    return sess;
+    if (res.code) return this.exchange(res.code);
+    if (res.accessToken) {
+      const sess = {
+        access_token: res.accessToken,
+        expires_at: Date.now() + (Number(res.expiresIn || 3600) - 60) * 1000,
+      };
+      write(LS.ytTok, sess);
+      return sess;
+    }
+    throw new Error('no_token_returned');
   },
 
-  token() {
-    const s = readJSON(LS.ytTok);
-    return s && Date.now() < s.expires_at ? s.access_token : null;
+  async exchange(code) {
+    const verifier = read(LS.ytVer, '');
+    const body = new URLSearchParams({
+      client_id: read(LS.ytClient, ''),
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: REDIRECT_URI,
+      code_verifier: verifier,
+    });
+    const r = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error_description || j.error || 'google_token_exchange_failed');
+    j.expires_at = Date.now() + (j.expires_in - 60) * 1000;
+    write(LS.ytTok, j);
+    write(LS.ytVer, null);
+    return j;
+  },
+
+  async token() {
+    let s = readJSON(LS.ytTok);
+    if (!s) return null;
+    if (Date.now() < (s.expires_at || 0)) return s.access_token;
+    if (!s.refresh_token) return null;
+    return this.refreshToken();
+  },
+
+  async refreshToken() {
+    let s = readJSON(LS.ytTok);
+    if (!s || !s.refresh_token) return null;
+    const r = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: read(LS.ytClient, ''),
+        grant_type: 'refresh_token',
+        refresh_token: s.refresh_token,
+      }),
+    });
+    const j = await r.json();
+    if (!r.ok) { write(LS.ytTok, null); return null; }
+    j.refresh_token = j.refresh_token || s.refresh_token;
+    j.expires_at = Date.now() + (j.expires_in - 60) * 1000;
+    write(LS.ytTok, j);
+    return j.access_token;
   },
 
   logout() { write(LS.ytTok, null); },
@@ -246,7 +338,7 @@ export const youtube = {
    * OAuth token > user API key > server-side key proxy.
    */
   async api(path, params = {}) {
-    const tok = this.token();
+    const tok = await this.token();
     const key = this.apiKey();
     const url = new URL(`https://www.googleapis.com/youtube/v3/${path}`);
     Object.entries(params).forEach(([k, v]) => v != null && url.searchParams.set(k, v));
@@ -275,9 +367,12 @@ export async function consumePendingRedirect() {
   const d = JSON.parse(raw);
   if (d.error) return { provider: d.provider, error: d.error };
   if (d.provider === 'spotify' && d.code) { await spotify.exchange(d.code); return { provider: 'spotify' }; }
-  if (d.provider === 'youtube' && d.accessToken) {
-    write(LS.ytTok, { access_token: d.accessToken, expires_at: Date.now() + (Number(d.expiresIn || 3600) - 60) * 1000 });
-    return { provider: 'youtube' };
+  if (d.provider === 'youtube') {
+    if (d.code) { await youtube.exchange(d.code); return { provider: 'youtube' }; }
+    if (d.accessToken) {
+      write(LS.ytTok, { access_token: d.accessToken, expires_at: Date.now() + (Number(d.expiresIn || 3600) - 60) * 1000 });
+      return { provider: 'youtube' };
+    }
   }
   return null;
 }

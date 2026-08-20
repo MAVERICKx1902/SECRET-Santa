@@ -181,31 +181,77 @@ button, input, select { font: inherit; color: inherit; }
   position: absolute;
   inset: 0;
   z-index: 1;
-  display: grid;
-  place-content: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   color: var(--dim);
   padding: 24px;
-  line-height: 1.9;
+  line-height: 1.8;
+  user-select: none;
 }
 #idle.off { display: none; }
-#idle > * {
-  padding: 0 34px;
+
+.wazzuppp-hero {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 14px;
 }
-#idle .logo {
-  font-size: 34px;
-  color: var(--fg);
-  letter-spacing: 6px;
-  margin-bottom: 6px;
-  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+
+.wazzuppp-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Outfit', 'Inter', system-ui, sans-serif;
+  font-size: clamp(48px, 9vw, 96px);
+  font-weight: 800;
+  letter-spacing: -2px;
+  background: linear-gradient(135deg, #ffffff 0%, #c3e88d 35%, #7aa2f7 70%, #bb9af7 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: appleGlow 8s ease infinite alternate;
+  filter: drop-shadow(0 12px 35px rgba(122, 162, 247, 0.35));
 }
-#idle .idle-keys { margin-top: 18px; }
-#idle kbd {
+
+@keyframes appleGlow {
+  0% { background-position: 0% 50%; filter: drop-shadow(0 12px 35px rgba(122, 162, 247, 0.3)); }
+  50% { background-position: 100% 50%; filter: drop-shadow(0 16px 45px rgba(195, 232, 141, 0.4)); }
+  100% { background-position: 0% 50%; filter: drop-shadow(0 12px 35px rgba(187, 154, 247, 0.35)); }
+}
+
+#idle .idle-version {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
   color: var(--accent);
+  margin-bottom: 10px;
+  background: var(--glass-bg-soft);
+  border: 1px solid var(--glass-border-soft);
+  padding: 4px 14px;
+  border-radius: 20px;
+  display: inline-block;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+#idle .idle-sub {
+  font-size: 14px;
+  color: var(--dim);
+  margin-bottom: 16px;
+}
+
+#idle .idle-keys, #idle .idle-tab {
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+#idle kbd {
+  color: var(--fg);
   background: var(--glass-bg-soft);
   border: 1px solid var(--glass-border-soft);
   border-radius: 5px;
-  padding: 1px 6px;
+  padding: 2px 7px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 /* ---------- OSD text (mpv show-text) ---------- */

@@ -171,6 +171,16 @@ const server = createServer((req, res) => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`mpv-web listening on http://0.0.0.0:${PORT}`);
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`Port ${PORT} is already in use; reusing existing server instance on http://localhost:${PORT}`);
+  } else {
+    console.error('Server error:', err);
+  }
 });
+
+server.listen(PORT, () => {
+  console.log(`mpv-web listening on http://localhost:${PORT}`);
+});
+
+

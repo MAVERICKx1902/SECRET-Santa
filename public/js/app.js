@@ -285,12 +285,19 @@ async function loadURL(raw, { play = true } = {}) {
   }
 
   if (p.kind === 'spotify') {
-    const path = p.type === 'album' ? `/albums/${p.id}/tracks?limit=50` : `/playlists/${p.id}/tracks?limit=50`;
-    const d = await spotify.api(path);
+    if (p.type === 'album') {
+      const album = await spotify.api(`/albums/${p.id}`);
+      const items = (album.tracks?.items || [])
+        .filter(Boolean)
+        .map((t) => trackToItem({ ...t, album }, `spotify:album:${p.id}`));
+      addItems(items, { play });
+      return;
+    }
+    const d = await spotify.api(`/playlists/${p.id}/tracks?limit=50`);
     const items = (d.items || [])
-      .map((row) => (p.type === 'album' ? row : row.track))
+      .map((row) => row.track)
       .filter(Boolean)
-      .map((t) => trackToItem(t, p.type === 'album' ? null : `spotify:playlist:${p.id}`));
+      .map((t) => trackToItem(t, `spotify:playlist:${p.id}`));
     addItems(items, { play });
   }
 }
@@ -303,7 +310,7 @@ function trackToItem(t, contextUri = null) {
     id: t.id,
     title: t.name,
     subtitle: (t.artists || []).map((a) => a.name).join(', '),
-    art: t.album?.images?.slice(-1)[0]?.url || t.album?.images?.[0]?.url || '',
+    art: t.album?.images?.[0]?.url || t.album?.images?.slice(-1)[0]?.url || '',
     duration: (t.duration_ms || 0) / 1000,
   };
 }
@@ -316,14 +323,33 @@ async function runSearch(q) {
   el.results.innerHTML = '<div class="empty">searching…</div>';
   const out = [];
 
+  if (src === 'spotify' && !spotify.isAuthed()) {
+    el.results.innerHTML = `<div class="empty">Spotify search requires signing in.<br>Go to the <b>accounts</b> tab and click <b>Continue with Spotify</b>, or switch the dropdown to <b>youtube</b> / <b>auto</b>.</div>`;
+    return;
+  }
+
   const wantSpotify = src === 'spotify' || (src === 'auto' && spotify.isAuthed());
   const wantYouTube = src === 'youtube' || src === 'auto';
 
+  let spotifyError = null;
+  let youtubeError = null;
+
   const jobs = [];
   if (wantSpotify) {
-    jobs.push(spotify.api(`/search?type=track&limit=15&q=${encodeURIComponent(q)}`)
-      .then((d) => (d.tracks?.items || []).forEach((t) => out.push(trackToItem(t))))
-      .catch((e) => logLine('[spotify] ' + e.message, 'e')));
+    const spParams = new URLSearchParams({ q: q.trim(), type: 'track', limit: '10' });
+    jobs.push(spotify.api(`/search?${spParams.toString()}`)
+      .catch(async (e) => {
+        if (e.message && e.message.toLowerCase().includes('limit')) {
+          const fallbackParams = new URLSearchParams({ q: q.trim(), type: 'track', limit: '5' });
+          return spotify.api(`/search?${fallbackParams.toString()}`);
+        }
+        throw e;
+      })
+      .then((d) => (d?.tracks?.items || []).forEach((t) => out.push(trackToItem(t))))
+      .catch((e) => {
+        spotifyError = e.message;
+        logLine('[spotify] ' + e.message, 'e');
+      }));
   }
   if (wantYouTube) {
     jobs.push(youtube.api('search', { part: 'snippet', type: 'video', maxResults: 15, videoEmbeddable: 'true', q })
@@ -331,14 +357,23 @@ async function runSearch(q) {
         source: 'youtube', id: v.id.videoId, title: decodeEntities(v.snippet.title),
         subtitle: v.snippet.channelTitle, art: v.snippet.thumbnails?.default?.url,
       })))
-      .catch((e) => logLine('[youtube] ' + e.message, 'e')));
+      .catch((e) => {
+        youtubeError = e.message;
+        logLine('[youtube] ' + e.message, 'e');
+      }));
   }
   await Promise.all(jobs);
 
   state.results = out;
   state.resultSel = 0;
   if (!out.length) {
-    el.results.innerHTML = `<div class="empty">No results.<br>Search needs Spotify sign-in, or a Google sign-in / YouTube API key (accounts tab).</div>`;
+    if (spotifyError) {
+      el.results.innerHTML = `<div class="empty">Spotify search error: <b>${escapeHTML(spotifyError)}</b><br>Try clicking <b>sign out of spotify</b> and signing in again on the <b>accounts</b> tab.</div>`;
+    } else if (youtubeError) {
+      el.results.innerHTML = `<div class="empty">YouTube search error: <b>${escapeHTML(youtubeError)}</b></div>`;
+    } else {
+      el.results.innerHTML = `<div class="empty">No results found for "${escapeHTML(q)}".</div>`;
+    }
     return;
   }
   renderResults();
@@ -363,7 +398,12 @@ function renderResults() {
   el.results.querySelectorAll('.row').forEach((r) => {
     r.onclick = (ev) => {
       const it = state.results[Number(r.dataset.i)];
-      ev.shiftKey ? addItems([it]) : addItems([it], { play: true });
+      if (ev.shiftKey) {
+        addItems([it]);
+      } else {
+        addItems([it], { play: true });
+        goBack();
+      }
     };
   });
 }
@@ -512,7 +552,14 @@ document.addEventListener('keydown', (e) => {
     if (e.target.id === 'search-input') {
       if (e.key === 'Enter') {
         const it = state.results[state.resultSel];
-        if (it) e.shiftKey ? addItems([it]) : addItems([it], { play: true });
+        if (it) {
+          if (e.shiftKey) {
+            addItems([it]);
+          } else {
+            addItems([it], { play: true });
+            goBack();
+          }
+        }
         e.preventDefault(); return;
       }
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -791,5 +838,5 @@ function wireUI() {
   if (spotify.isAuthed()) getBackend('spotify').init().catch(() => {});
 
   requestAnimationFrame(tick);
-  logLine('mpv-web 1.1.1 ready. Type "help" or press ? for keys.');
+  logLine('mpv-web v1.1.3 ready. Type "help" or press ? for keys.');
 })();

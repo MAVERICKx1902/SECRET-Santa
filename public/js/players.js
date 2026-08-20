@@ -44,6 +44,9 @@ export class YouTubeBackend {
         events: {
           onReady: () => { this.ready = true; resolve(); },
           onStateChange: (e) => {
+            if (e.data === YT.PlayerState.PLAYING) {
+              try { this.player.setPlaybackRate(this.speed); } catch {}
+            }
             if (e.data === YT.PlayerState.ENDED) this.onEnd();
             this.onEvent('state', e.data);
           },
@@ -56,7 +59,7 @@ export class YouTubeBackend {
   async load(item, { autoplay = true } = {}) {
     await this.init();
     autoplay ? this.player.loadVideoById(item.id) : this.player.cueVideoById(item.id);
-    this.player.setPlaybackRate(this.speed);
+    try { this.player.setPlaybackRate(this.speed); } catch {}
   }
 
   play() { this.player?.playVideo(); }
@@ -98,6 +101,7 @@ export class SpotifyBackend {
     this.last = null;
     this.lastTick = 0;
     this._endGuard = false;
+    this._wasPlaying = false;
   }
 
   async init() {
@@ -124,11 +128,13 @@ export class SpotifyBackend {
 
     this.player.addListener('player_state_changed', (s) => {
       if (!s) return;
+      if (!s.paused || s.position > 1000) this._wasPlaying = true;
+      const ended = this._wasPlaying && s.paused && s.position === 0;
       this.last = s;
       this.lastTick = performance.now();
-      // SDK signals track end as: paused, position 0, and previous track set.
-      if (s.paused && s.position === 0 && s.track_window?.previous_tracks?.length && !this._endGuard) {
+      if (ended && !this._endGuard) {
         this._endGuard = true;
+        this._wasPlaying = false;
         setTimeout(() => { this._endGuard = false; }, 1500);
         this.onEnd();
       }
@@ -147,10 +153,21 @@ export class SpotifyBackend {
 
   async load(item) {
     await this.init();
-    await spotify.api(`/me/player/play?device_id=${this.device}`, {
-      method: 'PUT',
-      body: JSON.stringify(item.contextUri ? { context_uri: item.contextUri, offset: { uri: item.uri } } : { uris: [item.uri] }),
-    });
+    try {
+      await spotify.api(`/me/player/play?device_id=${this.device}`, {
+        method: 'PUT',
+        body: JSON.stringify(item.contextUri ? { context_uri: item.contextUri, offset: { uri: item.uri } } : { uris: [item.uri] }),
+      });
+    } catch (err) {
+      if (item.contextUri) {
+        await spotify.api(`/me/player/play?device_id=${this.device}`, {
+          method: 'PUT',
+          body: JSON.stringify({ uris: [item.uri] }),
+        });
+      } else {
+        throw err;
+      }
+    }
   }
 
   play() { this.player?.resume(); }

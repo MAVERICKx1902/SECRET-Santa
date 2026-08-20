@@ -1,4 +1,4 @@
-# mpv-web — Version 1.1.1
+# mpv-web — Version 1.1.3
 
 An **mpv-style** player for the browser (and as a Windows `.exe`). Black canvas, monospace OSD, no chrome, everything on the keyboard — media from **Spotify**, **YouTube**, or local files.
 
@@ -12,7 +12,20 @@ An **mpv-style** player for the browser (and as a Windows `.exe`). Black canvas,
  s        shuffle   Esc / ← Back  back to main screen (even if search is focused)
 ```
 
-## Version 1.1.1 (this file — check the stamp before installing)
+## Version 1.1.3 (this file — check the stamp before installing)
+
+- **Apple-Inspired Opening Screen:** Replaced static idle page with a modern animated "WAZZUPPP" hero greeting.
+- **Electron OAuth Popup Window Support:** Enabled Electron child popup windows for Spotify and Google authentication flow.
+- **Google PKCE Flow:** Upgraded Google OAuth to PKCE Authorization Code flow (`response_type=code`) resolving `Error 400: unsupported_response_type`.
+- **IP Loopback & Fallback Improvements:** Standardized loopback handling (`127.0.0.1`) and context Uri playback fallback for Spotify tracks.
+
+- **Correct Server Port Output:** `server.js` now dynamically logs the actual configured `PORT` rather than hardcoding port 3001.
+- **Cross-Host OAuth Popup Reliability:** `callback.html` and `auth.js` safely accept postMessages between `localhost` and `127.0.0.1` origin variations so local authorization popups complete smoothly.
+- **Full Spotify Album Support:** Loading Spotify album links now correctly retrieves high-resolution album artwork and attaches album context for playback.
+- **Seamless Search-to-Playback Focus:** Playing search results automatically returns focus to the stage so player keybindings (`space`, `f`, `m`, `arrows`) work instantly.
+- **Robust Track End & Speed Controls:** Spotify track end detection and YouTube playback rate persistence across video loads have been strengthened.
+
+## Version 1.1.1
 
 - **Stable keyboard navigation:** the closed side panel is now inert, list selection scrolls only its own list, and keyboard shortcuts no longer shift the whole player sideways.
 - **Diagnosable OAuth failures:** the callback page shows provider errors and the exact redirect URI required; closing an incomplete Spotify/Google sign-in now reports the same actionable hint instead of `window_closed`.
