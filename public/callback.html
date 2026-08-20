@@ -5,8 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>mpv-web · auth</title>
 <style>
-  html, body { background:#000; color:#ccc; font:13px/1.5 ui-monospace, Menlo, Consolas, monospace; height:100%; margin:0; }
-  main { display:grid; place-content:center; min-height:100%; text-align:center; padding:2rem; }
+  html, body { background:#050507; color:#ccc; font:13px/1.5 ui-monospace, Menlo, Consolas, monospace; height:100%; margin:0; overflow:hidden; }
+  body::before, body::after { content:""; position:fixed; width:70vw; height:70vw; border-radius:50%; filter:blur(90px) saturate(150%); opacity:.45; pointer-events:none; animation:flow 18s linear infinite alternate; }
+  body::before { background:#1e3a8a; left:-20vw; top:-25vw; }
+  body::after { background:#6d28d9; right:-20vw; bottom:-25vw; animation-delay:-9s; }
+  @keyframes flow { from { transform:translate3d(0,0,0) scale(1); } to { transform:translate3d(18vw,12vh,0) scale(1.2); } }
+  main { position:relative; z-index:1; display:grid; place-content:center; min-height:100%; text-align:center; padding:2rem; }
+  #back { display:inline-block; margin-top:1.25rem; color:#8ab4f8; }
   #msg { max-width:42rem; }
   b, a { color:#8ab4f8; }
   code { display:block; margin:1rem 0; padding:.75rem; color:#f2f3f7; background:#151515; border:1px solid #333; border-radius:4px; overflow-wrap:anywhere; user-select:all; }
@@ -45,6 +50,11 @@
         msg.appendChild(value);
         msg.appendChild(document.createTextNode('Close this window, correct the URI, and try signing in again.'));
       }
+      var back = document.createElement('a');
+      back.id = 'back';
+      back.href = './';
+      back.textContent = '← Back to mpv-web';
+      msg.appendChild(back);
     }
 
     // A bare callback page is not an OAuth result. Do not silently bounce home:
@@ -88,11 +98,6 @@
     try { sessionStorage.setItem('mpvweb.pendingAuth', JSON.stringify(payload)); } catch (e) {}
     if (error) {
       showMessage('Sign-in failed.', error);
-      var link = document.createElement('a');
-      link.href = './';
-      link.textContent = 'Return to mpv-web';
-      msg.appendChild(document.createElement('br'));
-      msg.appendChild(link);
       return;
     }
     location.replace('./');

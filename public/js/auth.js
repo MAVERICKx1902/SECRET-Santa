@@ -15,7 +15,13 @@ const LS = {
   email: 'mpvweb.account.email',
 };
 
-export const REDIRECT_URI = `${location.origin}/callback.html`;
+// Spotify requires 127.0.0.1 for HTTP loopback redirects. Keep the public
+// app URL friendly while using the registered loopback address for OAuth.
+export const REDIRECT_URI = `${location.protocol === 'http:' && location.hostname === 'localhost'
+  ? `${location.protocol}//127.0.0.1${location.port ? `:${location.port}` : ''}`
+  : location.origin}/callback.html`;
+
+const SPOTIFY_CLIENT_ID = /^[A-Za-z0-9]{32}$/;
 
 const SPOTIFY_SCOPES = [
   'streaming',
@@ -117,6 +123,9 @@ export const spotify = {
   async login() {
     const clientId = read(LS.spClient, '');
     if (!clientId) throw new Error('Set a Spotify Client ID first (accounts tab).');
+    if (!SPOTIFY_CLIENT_ID.test(clientId)) {
+      throw new Error('Spotify Client ID must be exactly 32 letters and numbers. Use the Client ID, not the Client Secret or app URL.');
+    }
     const verifier = randomString();
     write(LS.spVer, verifier);
     const url = new URL('https://accounts.spotify.com/authorize');
