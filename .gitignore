@@ -3,3 +3,7 @@ node_modules/
 .env.local
 npm-debug.log*
 .DS_Store
+dist/
+release/
+*.exe
+.electron-builder-cache/

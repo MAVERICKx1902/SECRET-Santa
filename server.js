@@ -20,6 +20,11 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get('/', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 app.use(
   express.static(path.join(__dirname, 'public'), {
     extensions: ['html'],
@@ -68,5 +73,5 @@ app.get('/api/youtube/search', async (req, res) => {
 app.get('/healthz', (req, res) => res.json({ ok: true }));
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`mpv-web listening on http://0.0.0.0:${PORT}`);
+  console.log(`Secret Santa listening on http://0.0.0.0:${PORT}`);
 });

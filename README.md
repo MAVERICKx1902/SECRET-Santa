@@ -1,75 +1,55 @@
-# mpv-web
+# Secret Santa
 
-An **mpv-style** player for the browser. Black canvas, monospace OSD, no chrome, everything on the keyboard — but the media comes from **your Spotify or YouTube account** (or local files).
+A local Secret Santa organizer. Add participants, draw names so nobody gets themselves, and let each person reveal only their own assignment.
 
-```
- space/k  pause      < >    prev/next     /      search
- ← →      ±5s        0-9    seek %        :      console
- ↑ ↓      volume     f      fullscreen    Tab    playlist
- [ ]      speed      L      loop          ?      help
- Shift+I  stats      m      mute          q/Esc  stop
-```
+Organizer password (change it in `index.html`): **`santa123`**
 
-## Run
+## Use it in a browser (no install)
 
 ```bash
 npm install
-npm start          # http://localhost:3000
+npm start
 ```
 
-## Sign in
+Then open **http://localhost:3000**
 
-Open the app, press <kbd>Tab</kbd> → **accounts**. You need a client ID per service. Both are free and take ~2 minutes. Everything is browser-side: **no client secrets, no tokens on the server.**
+1. Click **Organizer Login** → password `santa123`
+2. Add everyone, then **Draw Secret Santa Names**
+3. Each person logs in with their name and clicks reveal
 
-### Spotify
+Data stays in this browser’s `localStorage` (not shared across PCs unless you copy the storage).
 
-1. <https://developer.spotify.com/dashboard> → **Create app**
-2. Add the redirect URI shown in the accounts pane (the *copy* button next to it) — typically `http://localhost:3000/callback.html`
-3. Copy the **Client ID** into the app, click *sign in with spotify*
+## Make a Windows `.exe` (on your PC)
 
-Uses **Authorization Code + PKCE**, so no secret is needed. In-browser playback requires **Spotify Premium** — that's a hard limit of Spotify's Web Playback SDK, not this app. Free accounts can still search and browse.
-
-### YouTube
-
-Playback works **signed out** — paste any video/playlist URL and it plays. Sign in only if you want to search or pull in your own playlists.
-
-1. <https://console.cloud.google.com> → enable **YouTube Data API v3**
-2. **Credentials** → OAuth client ID → *Web application* → add the same redirect URI
-3. Copy the **Client ID** into the app
-
-Optionally paste a **YouTube Data API key** instead of signing in, if you only want search.
-
-### Optional server-side defaults
-
-Prefill the client IDs so you don't type them each time, and enable keyless search:
+You need [Node.js 18+](https://nodejs.org/) installed on the Windows machine.
 
 ```bash
-SPOTIFY_CLIENT_ID=... GOOGLE_CLIENT_ID=... YOUTUBE_API_KEY=... npm start
+git clone <this-repo>
+cd SECRET-Santa
+npm install
+npm run build:win
 ```
 
-## What you get
+When it finishes, look in the **`dist/`** folder:
 
-- **One transport for both services.** Spotify tracks and YouTube videos sit in the same playlist; the right backend loads per item.
-- **mpv keybindings** — the ones in the table above, plus drag & drop of URLs and files onto the window.
-- **Command console** (<kbd>:</kbd>) — `loadfile <url>`, `seek 30`, `set volume 70`, `set speed 1.5`, `playlist-next`, `shuffle`, `login spotify`, `quit`.
-- **Stats overlay** (<kbd>Shift</kbd>+<kbd>I</kbd>) — backend, position, speed, load latency, like mpv's.
-- **Audio-only view** for Spotify: cover art centered on black, since there's no video track.
-- **Local files** — open or drop any video/audio, no account at all.
+| File | What it is |
+|---|---|
+| `SecretSanta-portable.exe` | Double-click — no installer. Copy this file anywhere. |
+| `Secret Santa Setup x.x.x.exe` | Optional installer (Start Menu shortcut) |
 
-## How it fits together
+That is the downloadable app: send `SecretSanta-portable.exe` to your PC (or build it *on* the PC).
 
-```
-public/index.html    shell: stage, OSC, panel, help, console
-public/js/auth.js    Spotify PKCE + Google implicit; token storage & API wrappers
-public/js/players.js YouTubeBackend / SpotifyBackend / LocalBackend, one interface
-public/js/app.js     playlist, keybindings, OSD, search, render loop
-server.js            static host + optional YouTube search proxy
+### Run the desktop app without building
+
+```bash
+npm install
+npm run desktop
 ```
 
-Each backend implements `load / play / pause / seek / setVolume / setSpeed / state()`, so `app.js` never branches on which service is playing.
+### If you are not on Windows
 
-## Limits worth knowing
+`electron-builder --win` can still produce an `.exe` from macOS/Linux, but the first Windows build downloads a large Electron cache. Easiest path: clone the repo on your Windows PC and run `npm run build:win` there.
 
-- Spotify playback needs Premium, and speed control isn't supported by their SDK.
-- YouTube playback goes through the IFrame API, so YouTube's own ads/restrictions apply and some videos are not embeddable.
-- Tokens live in `localStorage` — signing out clears them.
+## Optional: mpv-style Spotify/YouTube player
+
+The previous media-player front-end is still at **http://localhost:3000/index.html** under `public/` after `npm start`.
