@@ -70,17 +70,17 @@ button, input, select { font: inherit; color: inherit; }
 #ambient .a1 {
   width: 55vw; height: 55vw; left: -6vw; top: -12vw;
   background: var(--amb1);
-  animation: drift1 26s ease-in-out infinite alternate;
+  animation: drift1 26s linear infinite alternate;
 }
 #ambient .a2 {
   width: 48vw; height: 48vw; right: -8vw; top: 4vh;
   background: var(--amb2);
-  animation: drift2 32s ease-in-out infinite alternate;
+  animation: drift2 32s linear infinite alternate;
 }
 #ambient .a3 {
   width: 60vw; height: 60vw; left: 18vw; bottom: -26vw;
   background: var(--amb3);
-  animation: drift3 38s ease-in-out infinite alternate;
+  animation: drift3 38s linear infinite alternate;
 }
 /* Video should not fight the ambient wash. */
 #stage.has-video #ambient { opacity: 0.14; }

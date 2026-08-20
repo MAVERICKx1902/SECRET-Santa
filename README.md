@@ -12,7 +12,11 @@ An **mpv-style** player for the browser (and as a Windows `.exe`). Black canvas,
  s        shuffle   Esc / ← Back  back to main screen (even if search is focused)
 ```
 
-## Version 1.1.1 (this file — check the stamp before installing)
+## Version 1.1.2 (this file — check the stamp before installing)
+
+- Spotify OAuth validates Client IDs before opening Spotify and uses `127.0.0.1` for local HTTP loopback redirects. Register exactly `http://127.0.0.1:3000/callback.html`.
+- Use the 32-character Spotify Client ID, not the Client Secret or app URL.
+- OAuth callback screens include a back link and the flowing ambient background.
 
 - **Stable keyboard navigation:** the closed side panel is now inert, list selection scrolls only its own list, and keyboard shortcuts no longer shift the whole player sideways.
 - **Diagnosable OAuth failures:** the callback page shows provider errors and the exact redirect URI required; closing an incomplete Spotify/Google sign-in now reports the same actionable hint instead of `window_closed`.
@@ -69,7 +73,7 @@ npm run desktop
 
 The `.exe` starts the same local server and opens it in a frameless window. Register this redirect URI in Spotify / Google:
 
-`http://localhost:3000/callback.html`
+`http://127.0.0.1:3000/callback.html`
 
 ## Sign in
 
@@ -78,7 +82,7 @@ Open the app, press <kbd>Tab</kbd> → **accounts**. Enter one **email** for thi
 ### Spotify
 
 1. <https://developer.spotify.com/dashboard> → **Create app**
-2. Add the redirect URI shown in the accounts pane — typically `http://localhost:3000/callback.html`
+2. Add the redirect URI shown in the accounts pane — typically `http://127.0.0.1:3000/callback.html`
 3. Copy the **Client ID** into the app, click **Continue with Spotify**
 
 Uses **Authorization Code + PKCE**. In-browser playback requires **Spotify Premium**. Free accounts can still search and browse.
