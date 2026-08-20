@@ -12,6 +12,7 @@
 <div id="app">
   <div id="stage">
     <div id="ambient"><div class="amb a1"></div><div class="amb a2"></div><div class="amb a3"></div></div>
+    <button id="back-top" class="backtop" title="Back to main screen (Esc)">&#8592; Back</button>
     <div id="yt-host"><div id="yt-player"></div></div>
     <div id="local-host"><video id="local-video" playsinline></video></div>
 
@@ -21,10 +22,10 @@
     </div>
 
     <div id="idle">
-      <div class="logo">mpv-web</div>
+      <div class="logo">mpv-web 1.1.0</div>
       <div>no file &mdash; nothing to play</div>
       <div class="idle-keys">
-        press <kbd>?</kbd> for keys &middot; <kbd>/</kbd> to search &middot; <kbd>:</kbd> for console
+        press <kbd>?</kbd> for keys &middot; <kbd>/</kbd> or <kbd>Ctrl+S</kbd> to search &middot; <kbd>:</kbd> for console
       </div>
       <div>press <kbd>Tab</kbd> for the playlist &amp; sign-in panel</div>
     </div>
@@ -46,6 +47,7 @@
 
     <div id="panel">
       <header>
+        <button class="tab" id="panel-back" title="back to main screen (Esc)">&#8592; back</button>
         <button class="tab on" data-pane="playlist">playlist</button>
         <button class="tab" data-pane="search">search</button>
         <button class="tab" data-pane="settings">accounts</button>
@@ -79,20 +81,23 @@
 
       <section class="pane" id="pane-settings">
         <div class="settings">
-          <h3>Spotify</h3>
-          <p>Status: <span id="sp-status" class="bad">signed out</span></p>
+          <h3>Account</h3>
+          <input type="email" id="account-email" placeholder="you@example.com" spellcheck="false" autocomplete="off" />
+          <p>Your email for this device. Stored only in this browser&rsquo;s localStorage &mdash; no custom OTP, no codes. Login is official OAuth.</p>
+          <button class="authbtn sp" id="sp-login">Continue with Spotify</button>
+          <button class="authbtn yt" id="yt-login">Continue with Google</button>
+          <p>Status &mdash; Spotify: <span id="sp-status" class="bad">signed out</span> &middot; Google: <span id="yt-status" class="bad">signed out</span></p>
+
+          <h3>Spotify details</h3>
           <p>Playback needs a <b>Spotify Premium</b> account (Web Playback SDK limitation).</p>
           <input type="text" id="sp-client" placeholder="Spotify Client ID" spellcheck="false" />
-          <button class="authbtn sp" id="sp-login">sign in with spotify</button>
-          <button class="authbtn" id="sp-logout">sign out</button>
+          <button class="authbtn" id="sp-logout">sign out of spotify</button>
 
-          <h3>YouTube</h3>
-          <p>Status: <span id="yt-status" class="bad">signed out</span></p>
+          <h3>Google / YouTube details</h3>
           <p>Playback works signed-out. Sign in to search and load <b>your</b> playlists &amp; likes.</p>
           <input type="text" id="yt-client" placeholder="Google OAuth Client ID" spellcheck="false" />
           <input type="text" id="yt-key" placeholder="YouTube Data API key (optional, for search)" spellcheck="false" />
-          <button class="authbtn yt" id="yt-login">sign in with google</button>
-          <button class="authbtn" id="yt-logout">sign out</button>
+          <button class="authbtn" id="yt-logout">sign out of google</button>
           <button class="authbtn" id="yt-mine">load my playlists</button>
 
           <h3>Redirect URI</h3>
@@ -131,12 +136,13 @@
         <div class="k"><b>f</b><span>fullscreen</span></div>
         <div class="k"><b>Tab</b><span>toggle side panel</span></div>
         <div class="k"><b>/</b><span>focus search</span></div>
+        <div class="k"><b>Ctrl+S / Cmd+S</b><span>open search (never shuffles)</span></div>
         <div class="k"><b>:</b><span>command console</span></div>
         <div class="k"><b>Shift+I</b><span>stats overlay</span></div>
         <div class="k"><b>L</b><span>loop current</span></div>
         <div class="k"><b>s</b><span>shuffle playlist</span></div>
         <div class="k"><b>?</b><span>this help</span></div>
-        <div class="k"><b>q / Esc</b><span>stop / close overlay</span></div>
+        <div class="k"><b>q / Esc / &#8592; Back</b><span>stop / back to main screen (even if search is focused)</span></div>
       </div>
       <div class="hint">Console commands: <b>loadfile &lt;url&gt;</b>, <b>seek &lt;n&gt;</b>, <b>set volume &lt;0-100&gt;</b>, <b>set speed &lt;n&gt;</b>, <b>playlist-next</b>, <b>playlist-prev</b>, <b>playlist-clear</b>, <b>shuffle</b>, <b>login spotify|youtube</b>, <b>logout</b>, <b>quit</b></div>
     </div>

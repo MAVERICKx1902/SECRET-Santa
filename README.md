@@ -1,4 +1,4 @@
-# mpv-web
+# mpv-web — Version 1.1.0
 
 An **mpv-style** player for the browser (and as a Windows `.exe`). Black canvas, monospace OSD, no chrome, everything on the keyboard — media from **Spotify**, **YouTube**, or local files.
 
@@ -8,23 +8,42 @@ An **mpv-style** player for the browser (and as a Windows `.exe`). Black canvas,
  ↑ ↓      volume     f      fullscreen    Tab    playlist
  [ ]      speed      L      loop          ?      help
  Shift+I  stats      m      mute          q/Esc  stop
+ Ctrl+S   search (capture phase — no Save dialog, no shuffle)
+ s        shuffle   Esc / ← Back  back to main screen (even if search is focused)
 ```
+
+## Version 1.1.0 (this file — check the stamp before installing)
+
+- **Ctrl+S / Cmd+S** opens **search** in the **capture phase**: no more browser Save dialog, and it never shuffles. Bare **S** still shuffles the playlist.
+- **Esc** and **← Back** (top-left button + the button in the panel header) return to the main screen even when the search box is focused.
+- **Accounts** pane: one **email** + **Continue with Spotify** / **Continue with Google** — official OAuth (Spotify PKCE, Google OAuth 2.0), no custom OTP/code login.
+- **Electron:** `npm run build:win` → **`dist/mpv-web-portable.exe`**.
+- **`npm start`** serves `public/` (the mpv-web player). The Secret Santa page was removed in 1.0.0 and stays removed.
 
 ## Run in a browser
 
 ```bash
+git clone https://github.com/MAVERICKx1902/SECRET-Santa.git
+cd SECRET-Santa
+git fetch origin
+git checkout main
+git pull origin main
 npm install
 npm start          # http://localhost:3000
 ```
+
+Then hard-refresh the browser (Ctrl+Shift+R) and press **Ctrl+S** to open search.
 
 ## Windows `.exe` (build on your PC)
 
 This sandbox cannot download the Electron runtime. On a **Windows** machine with [Node.js 18+](https://nodejs.org/):
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/MAVERICKx1902/SECRET-Santa.git
 cd SECRET-Santa
-git checkout arena/01a01d46-secret-santa
+git fetch origin
+git checkout main
+git pull origin main
 npm install
 npm run build:win
 ```
@@ -48,13 +67,13 @@ The `.exe` starts the same local server and opens it in a frameless window. Regi
 
 ## Sign in
 
-Open the app, press <kbd>Tab</kbd> → **accounts**. You need a client ID per service. Both are free. Everything is browser-side: **no client secrets, no tokens on the server.**
+Open the app, press <kbd>Tab</kbd> → **accounts**. Enter one **email** for this device, then **Continue with Spotify** / **Continue with Google**. You need a client ID per service. Both are free. Everything is browser-side: **no client secrets, no tokens on the server, no custom OTP.**
 
 ### Spotify
 
 1. <https://developer.spotify.com/dashboard> → **Create app**
 2. Add the redirect URI shown in the accounts pane — typically `http://localhost:3000/callback.html`
-3. Copy the **Client ID** into the app, click *sign in with spotify*
+3. Copy the **Client ID** into the app, click **Continue with Spotify**
 
 Uses **Authorization Code + PKCE**. In-browser playback requires **Spotify Premium**. Free accounts can still search and browse.
 
@@ -64,7 +83,7 @@ Playback works **signed out** — paste any video/playlist URL and it plays. Sig
 
 1. <https://console.cloud.google.com> → enable **YouTube Data API v3**
 2. **Credentials** → OAuth client ID → *Web application* → add the same redirect URI
-3. Copy the **Client ID** into the app
+3. Copy the **Client ID** into the app, click **Continue with Google**
 
 Optionally paste a **YouTube Data API key** instead of signing in, if you only want search.
 
