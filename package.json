@@ -1,8 +1,8 @@
 {
-  "name": "secret-santa",
+  "name": "mpv-web",
   "version": "1.0.0",
   "private": true,
-  "description": "Secret Santa organizer — draw names locally, reveal assignments privately",
+  "description": "An mpv-style minimal, keyboard-driven player front-end for Spotify and YouTube",
   "author": "MAVERICKx1902",
   "main": "electron/main.cjs",
   "type": "module",
@@ -17,17 +17,18 @@
     "node": ">=18"
   },
   "dependencies": {
-    "express": "^4.22.2"
+    "express": "^4.19.2"
   },
   "devDependencies": {
     "electron": "^33.2.1",
     "electron-builder": "^25.1.8"
   },
   "build": {
-    "appId": "com.maverickx1902.secretsanta",
-    "productName": "Secret Santa",
+    "appId": "com.maverickx1902.mpvweb",
+    "productName": "mpv-web",
     "files": [
-      "index.html",
+      "server.js",
+      "public/**/*",
       "electron/**/*",
       "package.json"
     ],
@@ -36,27 +37,16 @@
     },
     "win": {
       "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
       ]
     },
     "nsis": {
       "oneClick": true,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": false
+      "perMachine": false
     },
     "portable": {
-      "artifactName": "SecretSanta-portable.exe"
+      "artifactName": "mpv-web-portable.exe"
     }
   }
 }

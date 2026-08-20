@@ -1,55 +1,89 @@
-# Secret Santa
+# mpv-web
 
-A local Secret Santa organizer. Add participants, draw names so nobody gets themselves, and let each person reveal only their own assignment.
+An **mpv-style** player for the browser (and as a Windows `.exe`). Black canvas, monospace OSD, no chrome, everything on the keyboard — media from **Spotify**, **YouTube**, or local files.
 
-Organizer password (change it in `index.html`): **`santa123`**
+```
+ space/k  pause      < >    prev/next     /      search
+ ← →      ±5s        0-9    seek %        :      console
+ ↑ ↓      volume     f      fullscreen    Tab    playlist
+ [ ]      speed      L      loop          ?      help
+ Shift+I  stats      m      mute          q/Esc  stop
+```
 
-## Use it in a browser (no install)
+## Run in a browser
 
 ```bash
 npm install
-npm start
+npm start          # http://localhost:3000
 ```
 
-Then open **http://localhost:3000**
+## Windows `.exe` (build on your PC)
 
-1. Click **Organizer Login** → password `santa123`
-2. Add everyone, then **Draw Secret Santa Names**
-3. Each person logs in with their name and clicks reveal
-
-Data stays in this browser’s `localStorage` (not shared across PCs unless you copy the storage).
-
-## Make a Windows `.exe` (on your PC)
-
-You need [Node.js 18+](https://nodejs.org/) installed on the Windows machine.
+This sandbox cannot download the Electron runtime. On a **Windows** machine with [Node.js 18+](https://nodejs.org/):
 
 ```bash
 git clone <this-repo>
 cd SECRET-Santa
+git checkout arena/01a01d46-secret-santa
 npm install
 npm run build:win
 ```
 
-When it finishes, look in the **`dist/`** folder:
+Then open the **`dist/`** folder:
 
 | File | What it is |
 |---|---|
-| `SecretSanta-portable.exe` | Double-click — no installer. Copy this file anywhere. |
-| `Secret Santa Setup x.x.x.exe` | Optional installer (Start Menu shortcut) |
+| **`mpv-web-portable.exe`** | Double-click — no installer. This is the file to copy/share. |
+| `mpv-web Setup x.x.x.exe` | Optional installer |
 
-That is the downloadable app: send `SecretSanta-portable.exe` to your PC (or build it *on* the PC).
-
-### Run the desktop app without building
+Try the desktop window without packaging:
 
 ```bash
-npm install
 npm run desktop
 ```
 
-### If you are not on Windows
+The `.exe` starts the same local server and opens it in a frameless window. Register this redirect URI in Spotify / Google:
 
-`electron-builder --win` can still produce an `.exe` from macOS/Linux, but the first Windows build downloads a large Electron cache. Easiest path: clone the repo on your Windows PC and run `npm run build:win` there.
+`http://localhost:3000/callback.html`
 
-## Optional: mpv-style Spotify/YouTube player
+## Sign in
 
-The previous media-player front-end is still at **http://localhost:3000/index.html** under `public/` after `npm start`.
+Open the app, press <kbd>Tab</kbd> → **accounts**. You need a client ID per service. Both are free. Everything is browser-side: **no client secrets, no tokens on the server.**
+
+### Spotify
+
+1. <https://developer.spotify.com/dashboard> → **Create app**
+2. Add the redirect URI shown in the accounts pane — typically `http://localhost:3000/callback.html`
+3. Copy the **Client ID** into the app, click *sign in with spotify*
+
+Uses **Authorization Code + PKCE**. In-browser playback requires **Spotify Premium**. Free accounts can still search and browse.
+
+### YouTube
+
+Playback works **signed out** — paste any video/playlist URL and it plays. Sign in only if you want to search or pull in your playlists.
+
+1. <https://console.cloud.google.com> → enable **YouTube Data API v3**
+2. **Credentials** → OAuth client ID → *Web application* → add the same redirect URI
+3. Copy the **Client ID** into the app
+
+Optionally paste a **YouTube Data API key** instead of signing in, if you only want search.
+
+### Optional server-side defaults
+
+```bash
+SPOTIFY_CLIENT_ID=... GOOGLE_CLIENT_ID=... YOUTUBE_API_KEY=... npm start
+```
+
+## What you get
+
+- **One transport for both services.** Spotify tracks and YouTube videos sit in the same playlist.
+- **mpv keybindings**, drag & drop of URLs and files.
+- **Command console** (`:`) — `loadfile <url>`, `seek 30`, `set volume 70`, `set speed 1.5`, `playlist-next`, `shuffle`, `login spotify`, `quit`.
+- **Stats overlay** (Shift+I).
+- **Local files** — open or drop any video/audio, no account.
+
+## Limits
+
+- Spotify playback needs Premium; speed control is not supported by their SDK.
+- YouTube playback uses the IFrame API (ads/restrictions apply).
+- Tokens live in `localStorage`.
