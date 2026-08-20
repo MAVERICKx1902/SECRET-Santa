@@ -1,4 +1,4 @@
-# mpv-web — Version 1.1.0
+# mpv-web — Version 1.1.1
 
 An **mpv-style** player for the browser (and as a Windows `.exe`). Black canvas, monospace OSD, no chrome, everything on the keyboard — media from **Spotify**, **YouTube**, or local files.
 
@@ -12,7 +12,14 @@ An **mpv-style** player for the browser (and as a Windows `.exe`). Black canvas,
  s        shuffle   Esc / ← Back  back to main screen (even if search is focused)
 ```
 
-## Version 1.1.0 (this file — check the stamp before installing)
+## Version 1.1.1 (this file — check the stamp before installing)
+
+- **Stable keyboard navigation:** the closed side panel is now inert, list selection scrolls only its own list, and keyboard shortcuts no longer shift the whole player sideways.
+- **Diagnosable OAuth failures:** the callback page shows provider errors and the exact redirect URI required; closing an incomplete Spotify/Google sign-in now reports the same actionable hint instead of `window_closed`.
+- **Helpful direct-file fallback:** asset paths are relative, and opening `public/index.html` over `file://` explains that browser CORS rules require starting the local server instead of showing a blank page.
+- **Zero-dependency browser server:** `node server.js` now works from a clean clone using Node's built-in HTTP server. The Electron wrapper uses the same server unchanged.
+
+## Version 1.1.0
 
 - **Ctrl+S / Cmd+S** opens **search** in the **capture phase**: no more browser Save dialog, and it never shuffles. Bare **S** still shuffles the playlist.
 - **Esc** and **← Back** (top-left button + the button in the panel header) return to the main screen even when the search box is focused.
@@ -28,8 +35,7 @@ cd SECRET-Santa
 git fetch origin
 git checkout main
 git pull origin main
-npm install
-npm start          # http://localhost:3000
+node server.js     # http://localhost:3000
 ```
 
 Then hard-refresh the browser (Ctrl+Shift+R) and press **Ctrl+S** to open search.

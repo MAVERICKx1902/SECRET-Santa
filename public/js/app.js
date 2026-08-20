@@ -42,6 +42,18 @@ function fmt(sec, long = false) {
   return h || long ? `${p(h)}:${p(m)}:${p(s)}` : `${p(m)}:${p(s)}`;
 }
 
+/** Keep a selected row visible without allowing the browser to scroll #stage. */
+function scrollRowIntoView(container, row) {
+  if (!container || !row) return;
+  const rowTop = row.offsetTop;
+  const rowBottom = rowTop + row.offsetHeight;
+  const viewTop = container.scrollTop;
+  const viewBottom = viewTop + container.clientHeight;
+
+  if (rowTop < viewTop) container.scrollTop = rowTop;
+  else if (rowBottom > viewBottom) container.scrollTop = rowBottom - container.clientHeight;
+}
+
 let osdTimer;
 function osd(text, ms = 1600) {
   el.osd.textContent = text;
@@ -217,7 +229,7 @@ function renderPlaylist() {
   list.querySelectorAll('.row').forEach((r) => {
     r.onclick = () => playIndex(Number(r.dataset.i));
   });
-  list.querySelector('.row.sel')?.scrollIntoView({ block: 'nearest' });
+  scrollRowIntoView(list, list.querySelector('.row.sel'));
 }
 
 /* ---------------- URL parsing ---------------- */
@@ -506,7 +518,7 @@ document.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         state.resultSel = Math.max(0, Math.min(state.results.length - 1, state.resultSel + (e.key === 'ArrowDown' ? 1 : -1)));
         renderResults();
-        el.results.querySelector('.row.sel')?.scrollIntoView({ block: 'nearest' });
+        scrollRowIntoView(el.results, el.results.querySelector('.row.sel'));
         e.preventDefault(); return;
       }
     }
@@ -779,5 +791,5 @@ function wireUI() {
   if (spotify.isAuthed()) getBackend('spotify').init().catch(() => {});
 
   requestAnimationFrame(tick);
-  logLine('mpv-web 1.1.0 ready. Type "help" or press ? for keys.');
+  logLine('mpv-web 1.1.1 ready. Type "help" or press ? for keys.');
 })();

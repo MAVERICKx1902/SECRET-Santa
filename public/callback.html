@@ -2,11 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>mpv-web · auth</title>
 <style>
   html, body { background:#000; color:#ccc; font:13px/1.5 ui-monospace, Menlo, Consolas, monospace; height:100%; margin:0; }
-  main { display:grid; place-content:center; height:100%; text-align:center; padding:2rem; }
-  b { color:#8ab4f8; }
+  main { display:grid; place-content:center; min-height:100%; text-align:center; padding:2rem; }
+  #msg { max-width:42rem; }
+  b, a { color:#8ab4f8; }
+  code { display:block; margin:1rem 0; padding:.75rem; color:#f2f3f7; background:#151515; border:1px solid #333; border-radius:4px; overflow-wrap:anywhere; user-select:all; }
 </style>
 </head>
 <body>
@@ -17,30 +20,82 @@
   (function () {
     var params = new URLSearchParams(location.search);
     var hash = new URLSearchParams(location.hash.replace(/^#/, ''));
+    var msg = document.getElementById('msg');
+
     // Google's implicit flow returns state/token in the fragment; Spotify's
     // code flow returns state/code in the query. Accept either.
     var state = params.get('state') || hash.get('state') || '';
+    var code = params.get('code');
     var token = hash.get('access_token');
+    var errorCode = params.get('error') || hash.get('error');
+    var errorDescription = params.get('error_description') || hash.get('error_description');
+    var error = errorDescription || errorCode;
+    var expectedRedirect = location.origin + '/callback.html';
+
+    function showMessage(title, detail, redirect) {
+      msg.textContent = '';
+      var heading = document.createElement('b');
+      heading.textContent = title;
+      msg.appendChild(heading);
+      msg.appendChild(document.createElement('br'));
+      msg.appendChild(document.createTextNode(detail));
+      if (redirect) {
+        var value = document.createElement('code');
+        value.textContent = redirect;
+        msg.appendChild(value);
+        msg.appendChild(document.createTextNode('Close this window, correct the URI, and try signing in again.'));
+      }
+    }
+
+    // A bare callback page is not an OAuth result. Do not silently bounce home:
+    // leave the exact configuration fix visible so a redirect mismatch can be
+    // diagnosed instead of looking like a black, frozen popup.
+    if (!code && !token && !error) {
+      showMessage(
+        'No authorization response was returned.',
+        'The redirect URI registered with the provider must match this value exactly:',
+        expectedRedirect
+      );
+      return;
+    }
+
     var payload = {
       type: 'mpv-web-auth',
       provider: state.indexOf('yt:') === 0 || token ? 'youtube' : 'spotify',
-      code: params.get('code'),
+      code: code,
       state: state,
-      error: params.get('error') || hash.get('error'),
+      error: error,
       accessToken: token,
       expiresIn: hash.get('expires_in')
     };
+
     try {
       if (window.opener && !window.opener.closed) {
         window.opener.postMessage(payload, location.origin);
-        document.getElementById('msg').innerHTML = 'Signed in. <b>You can close this window.</b>';
-        setTimeout(function () { window.close(); }, 400);
+        if (error) {
+          showMessage('Sign-in failed.', error);
+        } else {
+          msg.innerHTML = 'Signed in. <b>You can close this window.</b>';
+          setTimeout(function () { window.close(); }, 400);
+        }
         return;
       }
     } catch (e) {}
-    // No opener (popup blocked → full redirect). Stash and bounce home.
+
+    // No opener (popup blocked and the provider performed a full redirect).
+    // Save a real result for the app, but keep provider errors visible instead
+    // of redirecting away before the user can read them.
     try { sessionStorage.setItem('mpvweb.pendingAuth', JSON.stringify(payload)); } catch (e) {}
-    location.replace('/');
+    if (error) {
+      showMessage('Sign-in failed.', error);
+      var link = document.createElement('a');
+      link.href = './';
+      link.textContent = 'Return to mpv-web';
+      msg.appendChild(document.createElement('br'));
+      msg.appendChild(link);
+      return;
+    }
+    location.replace('./');
   })();
 </script>
 </body>
