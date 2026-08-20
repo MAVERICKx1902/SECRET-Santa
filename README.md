@@ -1,4 +1,4 @@
-# mpv-web — Version 1.1.1
+# mpv-web — Version 1.1.2
 
 An **mpv-style** player for the browser (and as a Windows `.exe`). Black canvas, monospace OSD, no chrome, everything on the keyboard — media from **Spotify**, **YouTube**, or local files.
 
@@ -84,6 +84,8 @@ Open the app, press <kbd>Tab</kbd> → **accounts**. Enter one **email** for thi
 1. <https://developer.spotify.com/dashboard> → **Create app**
 2. Add the redirect URI shown in the accounts pane — typically `http://127.0.0.1:3000/callback.html`
 3. Copy the **Client ID** into the app, click **Continue with Spotify**
+
+**Important:** paste the 32-character **Client ID** only. Do not paste the Client Secret, the app URL, or the full `client_id=` URL. Register exactly `http://127.0.0.1:3000/callback.html` for local HTTP use. If Spotify shows `client_id: Invalid`, the value has the right shape but is not a valid Client ID for a Spotify app you own—re-copy it from the app's **Basic Information** page, remove spaces, and make sure you are using the same Spotify developer account. That provider-owned error page cannot display an mpv-web button; close it to return to the app.
 
 Uses **Authorization Code + PKCE**. In-browser playback requires **Spotify Premium**. Free accounts can still search and browse.
 
