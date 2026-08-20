@@ -1,6 +1,6 @@
 {
   "name": "mpv-web",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "description": "An mpv-style minimal, keyboard-driven player front-end for Spotify and YouTube",
   "author": "MAVERICKx1902",
@@ -15,9 +15,6 @@
   },
   "engines": {
     "node": ">=18"
-  },
-  "dependencies": {
-    "express": "^4.19.2"
   },
   "devDependencies": {
     "electron": "^33.2.1",

@@ -100,6 +100,7 @@ button, input, select { font: inherit; color: inherit; }
   min-height: 0;
   background: var(--bg);
   overflow: hidden;
+  overflow-anchor: none;
   cursor: none;
   isolation: isolate;
 }
@@ -385,9 +386,19 @@ button, input, select { font: inherit; color: inherit; }
   overflow: hidden;
   transform: translateX(calc(100% + 20px));
   opacity: 0;
-  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease,
+    visibility 0s linear 0.32s;
 }
-#panel.open { transform: none; opacity: 1; }
+#panel.open {
+  transform: none;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease,
+    visibility 0s;
+}
 
 #panel header {
   display: flex;
@@ -442,7 +453,14 @@ button, input, select { font: inherit; color: inherit; }
   box-shadow: 0 0 0 3px rgba(122, 162, 247, 0.16);
 }
 
-.list { overflow-y: auto; flex: 1; min-height: 0; padding: 6px; }
+.list {
+  position: relative;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  flex: 1;
+  min-height: 0;
+  padding: 6px;
+}
 .list .row {
   display: flex;
   gap: 11px;

@@ -81,15 +81,22 @@ function popupAuth(url, name) {
       return;
     }
 
+    let receivedMessage = false;
     const onMsg = (ev) => {
       if (ev.origin !== location.origin) return;
       const d = ev.data;
       if (!d || d.type !== 'mpv-web-auth') return;
+      receivedMessage = true;
       cleanup();
       d.error ? reject(new Error(d.error)) : resolve(d);
     };
     const timer = setInterval(() => {
-      if (win.closed) { cleanup(); reject(new Error('window_closed')); }
+      if (win.closed) {
+        cleanup();
+        if (!receivedMessage) {
+          reject(new Error(`Sign-in window closed before returning a result. Check that the registered redirect URI exactly matches ${REDIRECT_URI}.`));
+        }
+      }
     }, 600);
     function cleanup() { clearInterval(timer); window.removeEventListener('message', onMsg); try { win.close(); } catch {} }
     window.addEventListener('message', onMsg);
