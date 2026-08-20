@@ -12,6 +12,7 @@ const LS = {
   ytClient: 'mpvweb.youtube.clientId',
   ytKey: 'mpvweb.youtube.apiKey',
   ytTok: 'mpvweb.youtube.token',
+  email: 'mpvweb.account.email',
 };
 
 export const REDIRECT_URI = `${location.origin}/callback.html`;
@@ -35,6 +36,16 @@ const read = (k, d = null) => {
 };
 const readJSON = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
 const write = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)); } catch {} };
+
+/**
+ * The one email for this device. Purely a local identity tag (shown in the
+ * stats overlay) — it authenticates nothing. All logins are official OAuth
+ * against Spotify / Google; there is deliberately no custom OTP/code login.
+ */
+export const account = {
+  email: () => read(LS.email, ''),
+  setEmail: (v) => write(LS.email, String(v || '').trim() || null),
+};
 
 /* ---------- PKCE helpers ---------- */
 function randomString(len = 96) {

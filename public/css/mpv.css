@@ -105,6 +105,30 @@ button, input, select { font: inherit; color: inherit; }
 }
 #stage.cursor { cursor: default; }
 
+/* "← Back" — top-left of the stage, back to the main screen (Esc too). */
+.backtop {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 20;
+  background: var(--glass-bg-soft);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-soft);
+  border-radius: 9px;
+  padding: 6px 11px;
+  cursor: pointer;
+  color: var(--dim);
+  font-size: 12px;
+  line-height: 1;
+  transition: background 0.16s, border-color 0.16s, color 0.16s;
+}
+.backtop:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--glass-hi);
+  color: var(--fg);
+}
+
 #yt-host, #local-host {
   position: absolute;
   inset: 0;
@@ -466,7 +490,7 @@ button, input, select { font: inherit; color: inherit; }
 }
 .settings h3:first-child { margin-top: 0; }
 .settings p { color: var(--dim); font-size: 12px; margin: 0 0 9px; }
-.settings input[type="text"] {
+.settings input[type="text"], .settings input[type="email"] {
   width: 100%;
   background: rgba(0, 0, 0, 0.28);
   -webkit-backdrop-filter: blur(8px);
@@ -478,7 +502,7 @@ button, input, select { font: inherit; color: inherit; }
   margin-bottom: 9px;
   transition: border-color 0.16s, box-shadow 0.16s;
 }
-.settings input[type="text"]:focus {
+.settings input[type="text"]:focus, .settings input[type="email"]:focus {
   border-color: rgba(122, 162, 247, 0.65);
   box-shadow: 0 0 0 3px rgba(122, 162, 247, 0.16);
 }

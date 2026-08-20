@@ -1,7 +1,7 @@
 /**
  * mpv-web — the shell that ties auth + backends into one keyboard-driven player.
  */
-import { spotify, youtube, bootstrapConfig, consumePendingRedirect, REDIRECT_URI } from './auth.js';
+import { spotify, youtube, account, bootstrapConfig, consumePendingRedirect, REDIRECT_URI } from './auth.js';
 import { YouTubeBackend, SpotifyBackend, LocalBackend } from './players.js';
 
 const $ = (s) => document.querySelector(s);
@@ -438,7 +438,7 @@ function tick() {
       $('#st-loop').textContent = state.loop ? 'yes' : 'no';
       $('#st-video').textContent = st.hasVideo ? 'yes' : 'no (audio only)';
       $('#st-lat').textContent = state.lastLatency != null ? state.lastLatency + ' ms' : '—';
-      $('#st-acct').textContent = [spotify.isAuthed() && 'spotify', youtube.isAuthed() && 'google'].filter(Boolean).join(', ') || 'none';
+      $('#st-acct').textContent = ([spotify.isAuthed() && 'spotify', youtube.isAuthed() && 'google'].filter(Boolean).join(', ') || 'none') + (account.email() ? ' \u00b7 ' + account.email() : '');
     }
   }
   requestAnimationFrame(tick);
@@ -450,6 +450,38 @@ function typing(e) {
   return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT');
 }
 
+function openSearch() {
+  togglePanel(true);
+  showPane('search');
+  setTimeout(() => { const inp = $('#search-input'); inp.focus(); inp.select(); }, 60);
+}
+
+/**
+ * Back to the main screen: close whatever overlay is on top (console → help
+ * → panel) and drop focus from any input — works even if the search box is
+ * focused.
+ */
+function goBack() {
+  if (el.console.classList.contains('on')) closeConsole();
+  else if (el.help.classList.contains('on')) el.help.classList.remove('on');
+  else if (el.panel.classList.contains('open')) togglePanel(false);
+  const a = document.activeElement;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT')) a.blur();
+}
+
+/**
+ * Ctrl+S / Cmd+S opens search. Registered in the CAPTURE phase so it wins
+ * over the browser's Save Page default and over the bubble handler below
+ * (where bare 's' shuffles). Ctrl+S must never shuffle.
+ */
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 's' || e.key === 'S')) {
+    e.preventDefault();
+    e.stopPropagation();
+    openSearch();
+  }
+}, true);
+
 document.addEventListener('keydown', (e) => {
   if (el.console.classList.contains('on') && e.target === el.consoleInput) {
     if (e.key === 'Escape') { closeConsole(); e.preventDefault(); }
@@ -459,7 +491,12 @@ document.addEventListener('keydown', (e) => {
 
   // Result / playlist list navigation while a search box is focused.
   if (typing(e)) {
-    if (e.key === 'Escape') { e.target.blur(); return; }
+    if (e.key === 'Escape') {
+      // Back to the main screen even if search is focused.
+      e.target.blur();
+      if (el.panel.classList.contains('open')) togglePanel(false);
+      return;
+    }
     if (e.target.id === 'search-input') {
       if (e.key === 'Enter') {
         const it = state.results[state.resultSel];
@@ -503,7 +540,7 @@ document.addEventListener('keydown', (e) => {
     case k === '?': el.help.classList.toggle('on'); break;
     case k === 'I' && shift: el.stats.classList.toggle('on'); break;
     case k === 'L': state.loop = !state.loop; $('#b-loop').classList.toggle('on', state.loop); osd('Loop: ' + (state.loop ? 'yes' : 'no')); break;
-    case k === 's': shuffle(); break;
+    case k === 's' && !e.ctrlKey && !e.metaKey: shuffle(); break;
     case k === 'C' && shift: state.playlist = []; state.index = -1; renderPlaylist(); osd('Playlist cleared'); break;
     case /^[0-9]$/.test(k): seekPercent(Number(k) * 10); break;
     case k === 'Escape' || k === 'q':
@@ -590,6 +627,7 @@ function refreshAuthUI() {
   $('#yt-status').className = yt ? 'ok' : 'bad';
   $('#badge-sp').classList.toggle('on', sp);
   $('#badge-yt').classList.toggle('on', yt);
+  $('#account-email').value = account.email();
   $('#sp-client').value = spotify.clientId();
   $('#yt-client').value = youtube.clientId();
   $('#yt-key').value = youtube.apiKey();
@@ -611,6 +649,13 @@ function addFromInput() {
 function wireUI() {
   $$('#panel .tab[data-pane]').forEach((t) => (t.onclick = () => showPane(t.dataset.pane)));
   $('#panel-close').onclick = () => togglePanel(false);
+  $('#back-top').onclick = goBack;
+  $('#panel-back').onclick = goBack;
+
+  $('#account-email').onchange = (e) => {
+    account.setEmail(e.target.value);
+    osd('Email saved: ' + (account.email() || '(cleared)'));
+  };
   $('#url-add').onclick = addFromInput;
 
   $('#search-input').oninput = (e) => {
@@ -734,5 +779,5 @@ function wireUI() {
   if (spotify.isAuthed()) getBackend('spotify').init().catch(() => {});
 
   requestAnimationFrame(tick);
-  logLine('mpv-web ready. Type "help" or press ? for keys.');
+  logLine('mpv-web 1.1.0 ready. Type "help" or press ? for keys.');
 })();
